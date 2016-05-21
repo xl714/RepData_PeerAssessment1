@@ -6,16 +6,19 @@ output:
 ---
 
 ```{r, eval=FALSE}
-library("ggplot2")
 #rm(list = ls())
+library("ggplot2")
+library("lattice")
 setwd("~/r-work/RepData_PeerAssessment1")
 ```
 
 ## Loading and preprocessing the data
 
 ```{r, eval=FALSE}
-df <- read.table(unz("activity.zip", "activity.csv"), header=T, quote="\"", sep=",") # , nrows=30
+df <- read.table(unz("activity.zip", "activity.csv"), header=T, quote="\"", sep=",", as.factor()) # , nrows=30
 df <- df[complete.cases(df),]
+df$interval <- factor(df$interval)
+str(df)
 ```
 
 ## What is mean total number of steps taken per day?
@@ -28,7 +31,7 @@ For this part of the assignment, you can ignore the missing values in the datase
 
 dfSumByDate <- aggregate(steps ~ date, data = df, FUN = sum)
 
-g <- ggplot(dfSumByDate, aes(x=date, y=steps, gr)) 
+g <- ggplot(dfSumByDate, aes(x=date, y=steps)) 
 g + geom_histogram(stat = "identity") # identity < cause Error : Mapping a variable to y and also using stat="bin"
 
 # g <- ggplot(dfSumByDate, aes(x=date, y=steps)) 
@@ -49,28 +52,33 @@ median(dfSumByDate$steps)
 ```{r, eval=FALSE, echo=FALSE}
 #tapply(df$steps, df$date, mean)
 
-# 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis)
+# 1. Time series plot of the average number of steps taken
+# Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis)
 # and the average number of steps taken, averaged across all days (y-axis)
 
 
 
+dfMeanByInterval <- aggregate(steps ~ interval, data = df, FUN = mean)
 
+xyplot(steps ~ interval,
+       data = dfMeanByInterval,
+       type = "l")
+
+
+# fail: ggplot(dfMeanByInterval, aes(x = interval, y = steps)) + geom_line(  aes(group=interval))
+
+# time series sample
+# ggplot(df, aes(x = date, y = steps, group = interval)) +
+#     geom_line() +
+#     geom_line(mapping = aes(y = Upper), lty = "dashed") +
+#     geom_line(mapping = aes(y = Lower), lty = "dashed") +
+#     geom_line(mapping = aes(y = Signif), lwd = 1.3, colour = "red") +
+#     facet_wrap( ~ Site)
 
 # 2. Which 5-minute interval, on average across all the days in the dataset,
 # contains the maximum number of steps?
 
 
-
-
-
-
-
-ggplot(df, aes(x = date, y = steps, group = interval)) +
-    geom_line() +
-    geom_line(mapping = aes(y = Upper), lty = "dashed") +
-    geom_line(mapping = aes(y = Lower), lty = "dashed") +
-    geom_line(mapping = aes(y = Signif), lwd = 1.3, colour = "red") +
-    facet_wrap( ~ Site)
     
 ```
     
