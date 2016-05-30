@@ -8,9 +8,10 @@ output:
 ## Init program
 
 ```{r, eval=TRUE}
-library("ggplot2")
-library("lattice")
-library("xtable")
+library('ggplot2')
+library('lattice')
+library('xtable')
+library('dplyr')
 ```
 
 ## Loading and preprocessing the data
@@ -32,8 +33,6 @@ str(df)
 
 ```{r}
 
-#tapply(df$steps, df$date, mean)
-
 dfSumByDate <- aggregate(steps ~ date, data = df, FUN = sum)
 
 # hist(dfSumByDate$steps, breaks=seq(0, 24000, by=1000), main="Steps by date")
@@ -46,7 +45,7 @@ dfSumByDate <- aggregate(steps ~ date, data = df, FUN = sum)
 g <- ggplot(dfSumByDate, aes(steps))
 g + geom_histogram(breaks=seq(0, 23000, by=500), binwidth=1000, col="red", fill="blue", alpha = .2) + 
     labs(title="Histogram for Steps by Date") + labs(x="Steps", y="Frequency") + 
-    xlim(c(0, 23000)) + ylim(c(0, 7))
+    xlim(c(0, 23000)) + ylim(c(0, 12))
 ```
 
 2. Calculate and report the mean and median total number of steps taken per day
@@ -106,20 +105,43 @@ nrow(dfOriginal) - nrow(df)
 strategy does not need to be sophisticated. For example, you could use
 the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-```{r}
-
-#code   
-
-```
+- I will use the mean for that 5-minute interval
 
 3. Create a new dataset that is equal to the original dataset but with the
 missing data filled in.
 
-```{r}
+```{r, cache=TRUE}
 
-#code   
+dfMeanByIntervalLen = nrow(dfMeanByInterval)
+
+getMeanByIntervalForNAs <- function(intervals, steps)
+{
+    res = c()
+    intervalsLen = length(intervals)
+    for(i in 1:intervalsLen)
+    {
+        found = steps[i]
+        if(is.na(found))
+        {
+            for(j in 1:dfMeanByIntervalLen)
+            {
+                if(dfMeanByInterval$interval[j] == intervals[i])
+                {
+                    found = dfMeanByInterval$step[j]
+                    break
+                }
+            }
+        }
+        res <- c(res, found)
+    }
+    res
+}
+
+df <- mutate(dfOriginal, steps = getMeanByIntervalForNAs(interval, steps))
 
 ```
+
+- The sum of NAs in the step column must be 0. Lets check with : sum(is.na(df$steps)) = `r sum(is.na(df$steps))` !
 
 4. Make a histogram of the total number of steps taken each day and Calculate
 and report the mean and median total number of steps taken per day. Do
@@ -127,11 +149,25 @@ these values differ from the estimates from the first part of the assignment?
 What is the impact of imputing missing data on the estimates of the total
 daily number of steps?
 
+
 ```{r}
 
-#code   
+dfSumByDate <- aggregate(steps ~ date, data = df, FUN = sum)
+
+g <- ggplot(dfSumByDate, aes(steps))
+g + geom_histogram(breaks=seq(0, 23000, by=500), binwidth=1000, col="red", fill="blue", alpha = .2) + 
+    labs(title="Histogram for Steps by Date") + labs(x="Steps", y="Frequency") + 
+    xlim(c(0, 23000)) + ylim(c(0, 12))
 
 ```
+
+- The **mean** total number of steps taken per day is `r mean(dfSumByDate$steps)`
+- The **median** total number of steps taken per day is `r median(dfSumByDate$steps)`
+- The impact of imputing missing data on the estimates of the total
+daily number of steps are 
+-- higher frequency but relatively identical
+-- really small difference with mean and median total number of steps taken per day
+
 
 ## Are there differences in activity patterns between weekdays and weekends?
 For this part the weekdays() function may be of some help here. Use the dataset
