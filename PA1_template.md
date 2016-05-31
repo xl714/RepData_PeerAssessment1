@@ -1,13 +1,9 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 ## Init program
 
-```{r, eval=TRUE, results='hide', warning=FALSE, message=FALSE}
+
+```r
 library('ggplot2')
 library('lattice')
 library('xtable')
@@ -17,12 +13,20 @@ library('timeDate')
 
 ## Loading and preprocessing the data
 
-```{r getdata, echo=TRUE, eval=TRUE, cache=TRUE}
+
+```r
 dfOriginal <- read.table(unz("activity.zip", "activity.csv"), header=T, quote="\"", sep=",") # , nrows=30
 df <- dfOriginal[complete.cases(dfOriginal),]
 df$interval <- factor(df$interval)
 df$date <- as.Date(df$date , "%Y-%m-%d")
 str(df)
+```
+
+```
+## 'data.frame':	15264 obs. of  3 variables:
+##  $ steps   : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ date    : Date, format: "2012-10-02" "2012-10-02" ...
+##  $ interval: Factor w/ 288 levels "0","5","10","15",..: 1 2 3 4 5 6 7 8 9 10 ...
 ```
 
 
@@ -32,8 +36,8 @@ str(df)
 
 1. Make a histogram of the total number of steps taken each day
 
-```{r}
 
+```r
 dfSumByDate <- aggregate(steps ~ date, data = df, FUN = sum)
 
 # hist(dfSumByDate$steps, breaks=seq(0, 24000, by=1000), main="Steps by date")
@@ -47,13 +51,14 @@ g <- ggplot(dfSumByDate, aes(steps))
 g + geom_histogram(breaks=seq(0, 23000, by=500), binwidth=1000, col="red", fill="blue", alpha = .2) + 
     labs(title="Histogram for Steps by Date") + labs(x="Steps", y="Frequency") + 
     xlim(c(0, 23000)) + ylim(c(0, 12))
-
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)
 
 2. Calculate and report the mean and median total number of steps taken per day
 
-- The **mean** total number of steps taken per day is `r mean(dfSumByDate$steps)`
-- The **median** total number of steps taken per day is `r median(dfSumByDate$steps)`
+- The **mean** total number of steps taken per day is 1.0766189\times 10^{4}
+- The **median** total number of steps taken per day is 10765
 
 
 ## What is the average daily activity pattern?
@@ -62,27 +67,30 @@ g + geom_histogram(breaks=seq(0, 23000, by=500), binwidth=1000, col="red", fill=
 
 *Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)*
 
-```{r}
+
+```r
 dfMeanByInterval <- aggregate(steps ~ interval, data = df, FUN = mean)
 
 xyplot(steps ~ interval,
        data = dfMeanByInterval,
        type = "l")
-    
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)
 
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
-```{r results='asis', echo=FALSE}
+<table border=1>
+<tr> <th>  </th> <th> interval </th> <th> steps </th>  </tr>
+  <tr> <td align="right"> 104 </td> <td> 835 </td> <td align="right"> 206.17 </td> </tr>
+  <tr> <td align="right"> 105 </td> <td> 840 </td> <td align="right"> 195.92 </td> </tr>
+  <tr> <td align="right"> 107 </td> <td> 850 </td> <td align="right"> 183.40 </td> </tr>
+  <tr> <td align="right"> 106 </td> <td> 845 </td> <td align="right"> 179.57 </td> </tr>
+  <tr> <td align="right"> 103 </td> <td> 830 </td> <td align="right"> 177.30 </td> </tr>
+  <tr> <td align="right"> 101 </td> <td> 820 </td> <td align="right"> 171.15 </td> </tr>
+   </table>
 
-# sort dataset by steps (descending) so the max is at the top
-dfMeanByIntervalSorted <- dfMeanByInterval[order(-dfMeanByInterval$steps),]
-
-print(xtable(head(dfMeanByIntervalSorted)), type='html', comment=FALSE)
-
-```
-
-- The 5-minute interval, on average across all the days in the dataset, containing the maximum number of steps is the interval `r dfMeanByIntervalSorted$interval[[1]]` with an average of  `r dfMeanByIntervalSorted$steps[[1]]` steps in those 5 minutes.
+- The 5-minute interval, on average across all the days in the dataset, containing the maximum number of steps is the interval 835 with an average of  206.1698113 steps in those 5 minutes.
 
 
 ## Imputing missing values
@@ -94,13 +102,26 @@ calculations or summaries of the data.*
 1. Calculate and report the total number of missing values in the dataset
 (i.e. the total number of rows with NAs)
 
-```{r}
+
+```r
 colSums(is.na(dfOriginal))
+```
+
+```
+##    steps     date interval 
+##     2304        0        0
+```
+
+```r
 # or 
 nrow(dfOriginal) - nrow(df)
 ```
 
-- There are `r nrow(dfOriginal) - nrow(df)` rows with missing values
+```
+## [1] 2304
+```
+
+- There are 2304 rows with missing values
 
 
 2. Devise a strategy for filling in all of the missing values in the dataset. The
@@ -112,8 +133,8 @@ the mean/median for that day, or the mean for that 5-minute interval, etc.
 3. Create a new dataset that is equal to the original dataset but with the
 missing data filled in.
 
-```{r, cache=TRUE}
 
+```r
 dfMeanByIntervalLen = nrow(dfMeanByInterval)
 
 getMeanByIntervalForNAs <- function(intervals, steps)
@@ -140,10 +161,9 @@ getMeanByIntervalForNAs <- function(intervals, steps)
 }
 
 df <- mutate(dfOriginal, steps = getMeanByIntervalForNAs(interval, steps))
-
 ```
 
-- The number of NAs in the step column must be 0. Lets check with : sum(is.na(df$steps)) = `r sum(is.na(df$steps))` !
+- The number of NAs in the step column must be 0. Lets check with : sum(is.na(df$steps)) = 0 !
 
 4. Make a histogram of the total number of steps taken each day and Calculate
 and report the mean and median total number of steps taken per day. Do
@@ -152,19 +172,20 @@ What is the impact of imputing missing data on the estimates of the total
 daily number of steps?
 
 
-```{r}
 
+```r
 dfSumByDate <- aggregate(steps ~ date, data = df, FUN = sum)
 
 g <- ggplot(dfSumByDate, aes(steps))
 g + geom_histogram(breaks=seq(0, 23000, by=500), binwidth=1000, col="red", fill="blue", alpha = .2) + 
     labs(title="Histogram for Steps by Date") + labs(x="Steps", y="Frequency") + 
     xlim(c(0, 23000)) + ylim(c(0, 12))
-
 ```
 
-- The **mean** total number of steps taken per day is `r mean(dfSumByDate$steps)`
-- The **median** total number of steps taken per day is `r median(dfSumByDate$steps)`
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)
+
+- The **mean** total number of steps taken per day is 1.0766189\times 10^{4}
+- The **median** total number of steps taken per day is 1.0766189\times 10^{4}
 - The impact of imputing missing data on the estimates of the total
 daily number of steps are 
 -- higher frequency but relatively identical
@@ -180,8 +201,8 @@ with the filled-in missing values for this part.*
 and “weekend” indicating whether a given date is a weekday or weekend
 day.
 
-```{r, cache=TRUE}
 
+```r
 getWeekdayOrNotClass <- function(dates)
 {
     res = c()
@@ -201,7 +222,6 @@ getWeekdayOrNotClass <- function(dates)
 df <- mutate(df, weekdayOrNot = getWeekdayOrNotClass(date))
 
 df$weekdayOrNot <- factor(df$weekdayOrNot)
-
 ```
 
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the
@@ -213,14 +233,15 @@ the activity monitor data. Note that the above plot was made using the lattice
 system but you can make the same version of the plot using any plotting system
 you choose
 
-```{r, cache=TRUE}
 
+```r
 dfWeekOrNot <- aggregate(steps ~ weekdayOrNot + interval, data = df, FUN = mean)
 
 #qplot(interval, steps, data = dfWeekOrNot, color = weekdayOrNot, geom = c("point", "smooth"), method = "lm", facets = .~weekdayOrNot)
 
 g <- ggplot(dfWeekOrNot, aes(x=interval, y=steps)) + aes(colour = weekdayOrNot)
 g + geom_point() + facet_grid(. ~ weekdayOrNot)
-
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)
 
